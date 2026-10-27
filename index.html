@@ -43,7 +43,7 @@
       background-color: var(--bg);
       color: var(--text);
       line-height: 1.5;
-      padding-bottom: 60px;
+      padding-bottom: 90px; /* 플로팅 버튼 여백 */
     }
 
     /* 상단 안내 배너 (요구사항 10) */
@@ -70,7 +70,7 @@
     .notice-banner-content {
       color: #e2e8f0;
       font-size: 13px;
-      line-height: 1.4;
+      line-line: 1.4;
       word-break: keep-all;
     }
     .notice-banner-content strong {
@@ -92,7 +92,7 @@
       flex-wrap: wrap;
       gap: 10px;
       margin-top: 6px;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
     .app-title {
       font-size: 20px;
@@ -112,7 +112,7 @@
       border: 1px solid #bae6fd;
     }
 
-    /* 클라우드 동기화 바 */
+    /* 구글 드라이브 동기화 바 */
     .cloud-sync-bar {
       background: #f0fdf4;
       border: 1px solid #bbf7d0;
@@ -141,11 +141,8 @@
       font-weight: 700;
       cursor: pointer;
     }
-    .cloud-sync-bar.disconnected .cloud-btn {
-      background: #d97706;
-    }
 
-    /* 액션 버튼 그룹 */
+    /* 액션 버튼 그룹 (초기화 버튼 없음!) */
     .header-actions {
       display: flex;
       gap: 6px;
@@ -158,7 +155,7 @@
       background: #ffffff;
       border: 1px solid var(--border);
       color: var(--text-muted);
-      padding: 6px 10px;
+      padding: 6px 11px;
       border-radius: 6px;
       font-size: 12px;
       font-weight: 600;
@@ -173,20 +170,6 @@
       background: #f1f5f9;
       color: var(--text);
       border-color: #cbd5e1;
-    }
-    .save-indicator {
-      margin-left: auto;
-      font-size: 11px;
-      color: #10b981;
-      font-weight: 700;
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-    .save-indicator.show {
-      opacity: 1;
     }
 
     /* 검색 섹션 (요구사항 9) */
@@ -497,10 +480,49 @@
       font-size: 12px;
     }
 
+    /* ⭐ 우측 하단 플로팅 저장 버튼 (사용자 요청 반영) ⭐ */
+    .floating-save-btn {
+      position: fixed;
+      bottom: 24px;
+      right: 20px;
+      background: #2563eb;
+      color: #ffffff;
+      padding: 13px 22px;
+      border-radius: 50px;
+      font-size: 15px;
+      font-weight: 800;
+      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.45);
+      border: 2px solid #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      z-index: 99;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .floating-save-btn.has-changes {
+      background: #ea580c; /* 변경사항이 있을 때 주황색으로 강조 */
+      box-shadow: 0 8px 24px rgba(234, 88, 12, 0.55);
+      animation: pulse-save 1.8s infinite;
+    }
+    @keyframes pulse-save {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    .floating-save-btn:active {
+      transform: scale(0.95);
+    }
+    .floating-save-btn.saving {
+      background: #475569;
+      pointer-events: none;
+      animation: none;
+    }
+
+    /* 플로팅 맨 위로 가기 버튼 */
     .floating-top-btn {
       position: fixed;
-      bottom: 20px;
-      right: 20px;
+      bottom: 24px;
+      left: 20px;
       background: #1e293b;
       color: #ffffff;
       width: 44px;
@@ -514,6 +536,7 @@
       cursor: pointer;
       font-size: 18px;
       z-index: 40;
+      opacity: 0.85;
     }
 
     .modal-overlay {
@@ -614,19 +637,17 @@
     </div>
 
     <!-- 구글 드라이브(스프레드시트) 실시간 클라우드 동기화 상태 바 -->
-    <div id="cloudSyncBar" class="cloud-sync-bar disconnected">
-      <div id="cloudStatusText">☁️ 구글 드라이브 연동 필요 (기기 로컬 저장 모드)</div>
-      <button class="cloud-btn" onclick="openCloudModal()">연동 설정</button>
+    <div id="cloudSyncBar" class="cloud-sync-bar">
+      <div id="cloudStatusText">🟢 구글 드라이브 실시간 연동 준비됨</div>
+      <button class="cloud-btn" onclick="openCloudModal()">설정</button>
     </div>
 
-    <!-- 유틸리티 메뉴 -->
+    <!-- 유틸리티 메뉴 (초기화 버튼 없음!) -->
     <div class="header-actions">
-      <button class="btn-sm" onclick="syncFromCloud(true)">🔄 실시간 새로고침</button>
+      <button class="btn-sm" onclick="syncFromCloud(true)">🔄 클라우드 불러오기</button>
       <button class="btn-sm" onclick="exportDataCSV()">📊 엑셀/CSV 다운</button>
       <button class="btn-sm" onclick="exportDataJSON()">💾 백업(JSON)</button>
       <button class="btn-sm" onclick="openImportModal()">📂 복원</button>
-      <button class="btn-sm" onclick="confirmReset()">🗑️ 초기화</button>
-      <span id="saveIndicator" class="save-indicator">✓ 즉시 저장됨</span>
     </div>
 
     <!-- 9. 제품 검색 기능 -->
@@ -682,7 +703,14 @@
     <div id="rackContainer"></div>
   </div>
 
+  <!-- 좌측 하단 맨 위로 버튼 -->
   <button class="floating-top-btn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="맨 위로">↑</button>
+
+  <!-- ⭐ 우측 하단 플로팅 저장 버튼 ⭐ -->
+  <button id="floatingSaveBtn" class="floating-save-btn" onclick="saveToCloudManual()">
+    <span>💾</span>
+    <span id="floatingSaveText">저장하기</span>
+  </button>
 
   <!-- 구글 드라이브(시트) 연동 설정 모달 -->
   <div id="cloudModal" class="modal-overlay">
@@ -697,9 +725,6 @@
           class="modal-input" 
           placeholder="https://script.google.com/macros/s/.../exec"
         >
-        <div style="margin-top: 8px; font-size: 11.5px; color: #64748b;">
-          * 구글 스프레드시트 [확장 프로그램] → [Apps Script]에서 복사한 웹 앱 URL을 붙여넣으세요.
-        </div>
       </div>
       <div class="modal-actions">
         <button class="btn btn-secondary" onclick="closeCloudModal()">닫기</button>
@@ -741,9 +766,9 @@
 
     let rackData = {};
     let currentFilter = 'ALL';
-    let saveTimeout = null;
-    let cloudSyncDebounce = null;
     let cloudApiUrl = localStorage.getItem(CLOUD_URL_KEY) || DEFAULT_CLOUD_API_URL;
+    let hasUnsavedChanges = false;
+    let pendingChangesCount = 0;
 
     function getTodayYYMMDD() {
       const now = new Date();
@@ -762,8 +787,8 @@
       }
     }
 
-    // 8. 로컬 즉시 저장 + 구글 드라이브 클라우드 백그라운드 전송
-    function saveSlotData(slotKey, value) {
+    // 입력창 수정 시: 화면 리렌더링 없이 조용히 메모리/로컬에만 임시 보존 (타이핑 방해 방지!)
+    function onSlotInput(slotKey, value) {
       const trimmed = value.trim();
       if (trimmed === '') {
         delete rackData[slotKey];
@@ -771,8 +796,10 @@
         rackData[slotKey] = trimmed;
       }
 
+      // 로컬스토리지 임시 보존 (새로고침 방지)
       localStorage.setItem(STORAGE_KEY, JSON.stringify(rackData));
 
+      // 슬롯 스타일만 즉시 업데이트 (전체 리렌더링 X)
       const slotElement = document.getElementById(`slot-box-${slotKey}`);
       if (slotElement) {
         if (trimmed !== '') {
@@ -782,96 +809,117 @@
         }
       }
 
-      updateRowOccupancy(slotKey);
-      updateTotalStats();
-      showSaveIndicator('✓ 로컬 저장됨');
+      // 우측 하단 플로팅 저장 버튼 활성화
+      markChangesUnsaved();
+    }
 
-      // 구글 드라이브 연동 URL이 설정되어 있다면 클라우드 즉시 전송
-      if (cloudApiUrl) {
-        clearTimeout(cloudSyncDebounce);
-        cloudSyncDebounce = setTimeout(() => {
-          sendSlotToCloud(slotKey, trimmed);
-        }, 600);
+    function markChangesUnsaved() {
+      hasUnsavedChanges = true;
+      const btn = document.getElementById('floatingSaveBtn');
+      const text = document.getElementById('floatingSaveText');
+      if (btn && text) {
+        btn.className = 'floating-save-btn has-changes';
+        text.textContent = '저장하기 (변경됨)';
       }
     }
 
-    // 클라우드로 단일 슬롯 전송
-    function sendSlotToCloud(slotKey, value) {
-      if (!cloudApiUrl) return;
-      showSaveIndicator('☁️ 구글 드라이브 저장 중...');
+    function markChangesSaved() {
+      hasUnsavedChanges = false;
+      const btn = document.getElementById('floatingSaveBtn');
+      const text = document.getElementById('floatingSaveText');
+      if (btn && text) {
+        btn.className = 'floating-save-btn';
+        text.textContent = '✓ 저장 완료';
+        setTimeout(() => {
+          if (!hasUnsavedChanges) {
+            text.textContent = '저장하기';
+          }
+        }, 2500);
+      }
+    }
 
+    // ⭐ 사용자가 우측 하단 [저장하기] 버튼을 누를 때만 구글 드라이브로 안전하게 전송!
+    function saveToCloudManual() {
+      if (!cloudApiUrl) {
+        openCloudModal();
+        return;
+      }
+
+      const btn = document.getElementById('floatingSaveBtn');
+      const text = document.getElementById('floatingSaveText');
+      if (btn && text) {
+        btn.className = 'floating-save-btn saving';
+        text.textContent = '구글 드라이브 저장 중...';
+      }
+
+      // 구글 스프레드시트에 전체 일괄 저장 (Batch)
       fetch(cloudApiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
-          action: 'single',
-          slotKey: slotKey,
-          value: value
+          action: 'batch',
+          data: rackData
         })
       })
       .then(res => res.json())
       .then(data => {
         if (data.status === 'success') {
-          showSaveIndicator('☁️ 구글 드라이브 실시간 저장됨!');
+          markChangesSaved();
+          updateTotalStats();
+          alert('✓ 구글 드라이브에 안전하게 저장되었습니다!');
+        } else {
+          throw new Error(data.message || '저장 응답 오류');
         }
       })
       .catch(err => {
-        console.warn('클라우드 동기화 지연:', err);
-        showSaveIndicator('⚠️ 오프라인 저장됨 (재접속 시 반영)');
+        console.error('저장 실패:', err);
+        alert('⚠️ 네트워크 연결이 불안정하여 로컬에만 보관되었습니다. 잠시 후 다시 [저장하기]를 눌러주세요.');
+        if (btn && text) {
+          btn.className = 'floating-save-btn has-changes';
+          text.textContent = '다시 저장하기';
+        }
       });
     }
 
-    // 클라우드에서 전체 최신 데이터 가져오기
+    // 클라우드에서 데이터 가져오기 (사용자가 직접 누를 때만 실행하여 작성 중 화면 덮어쓰기 방지!)
     function syncFromCloud(showNotice) {
       if (!cloudApiUrl) {
         if (showNotice) openCloudModal();
         return;
       }
 
-      if (showNotice) showSaveIndicator('☁️ 구글 드라이브 최신화 중...');
+      if (hasUnsavedChanges) {
+        if (!confirm('저장하지 않은 변경사항이 있습니다. 클라우드 데이터를 불러오면 변경 내용이 덮어씌워질 수 있습니다. 계속하시겠습니까?')) {
+          return;
+        }
+      }
+
+      const syncBtn = event && event.target;
+      if (syncBtn && syncBtn.textContent) {
+        syncBtn.textContent = '불러오는 중...';
+      }
 
       fetch(cloudApiUrl)
         .then(res => res.json())
         .then(res => {
           if (res.status === 'success' && res.data) {
-            // 로컬 데이터와 클라우드 데이터 병합
-            rackData = { ...rackData, ...res.data };
+            rackData = res.data;
             localStorage.setItem(STORAGE_KEY, JSON.stringify(rackData));
             renderRacks();
-            updateCloudBarStatus(true);
-            if (showNotice) alert('구글 드라이브 최신 데이터와 동기화되었습니다!');
+            hasUnsavedChanges = false;
+            markChangesSaved();
+            if (showNotice) alert('구글 드라이브 최신 데이터를 불러왔습니다!');
           }
         })
         .catch(err => {
-          console.error('클라우드 동기화 실패:', err);
-          updateCloudBarStatus(false);
+          console.error('불러오기 실패:', err);
+          if (showNotice) alert('데이터를 불러오지 못했습니다. 인터넷 연결을 확인하세요.');
+        })
+        .finally(() => {
+          if (syncBtn && syncBtn.textContent) {
+            syncBtn.textContent = '🔄 클라우드 불러오기';
+          }
         });
-    }
-
-    function updateCloudBarStatus(isConnected) {
-      const bar = document.getElementById('cloudSyncBar');
-      const text = document.getElementById('cloudStatusText');
-      if (!cloudApiUrl) {
-        bar.className = 'cloud-sync-bar disconnected';
-        text.textContent = '☁️ 구글 드라이브 연동 필요 (기기 로컬 저장 모드)';
-      } else if (isConnected) {
-        bar.className = 'cloud-sync-bar';
-        text.textContent = '🟢 구글 드라이브 실시간 동기화 작동 중';
-      } else {
-        bar.className = 'cloud-sync-bar disconnected';
-        text.textContent = '⚠️ 구글 드라이브 연결 확인 중...';
-      }
-    }
-
-    function showSaveIndicator(msg) {
-      const el = document.getElementById('saveIndicator');
-      if (!el) return;
-      el.textContent = msg || '✓ 즉시 자동 저장됨';
-      el.classList.add('show');
-      clearTimeout(saveTimeout);
-      saveTimeout = setTimeout(() => {
-        el.classList.remove('show');
-      }, 2000);
     }
 
     function appendTodayDate(slotKey) {
@@ -884,7 +932,7 @@
       } else if (!current.includes(today)) {
         input.value = current + ', ' + today;
       }
-      saveSlotData(slotKey, input.value);
+      onSlotInput(slotKey, input.value);
     }
 
     function clearSlot(slotKey) {
@@ -892,7 +940,7 @@
       if (!input) return;
       if (input.value.trim() === '') return;
       input.value = '';
-      saveSlotData(slotKey, '');
+      onSlotInput(slotKey, '');
     }
 
     function updateTotalStats() {
@@ -908,26 +956,6 @@
       const badge = document.getElementById('statsBadge');
       if (badge) {
         badge.textContent = `적재: ${filledSlots}/${totalSlots}칸 (${percent}%)`;
-      }
-    }
-
-    function updateRowOccupancy(slotKey) {
-      const parts = slotKey.split('-');
-      if (parts.length >= 2) {
-        const dong = parts[0];
-        const rowNum = parts[1];
-        const rowId = `${dong}-${rowNum}`;
-        const rowEl = document.getElementById(`row-occupancy-${rowId}`);
-        if (rowEl) {
-          const cfg = WAREHOUSE_CONFIG[dong];
-          const totalInRow = cfg.floors * 2;
-          let filledInRow = 0;
-          for (let f = 1; f <= cfg.floors; f++) {
-            if ((rackData[`${dong}-${rowNum}-${f}-L`] || '').trim() !== '') filledInRow++;
-            if ((rackData[`${dong}-${rowNum}-${f}-R`] || '').trim() !== '') filledInRow++;
-          }
-          rowEl.textContent = `${filledInRow}/${totalInRow} 적재`;
-        }
       }
     }
 
@@ -1009,7 +1037,7 @@
                   class="slot-input" 
                   rows="2" 
                   placeholder="예: APST-2031, 모터, ${getTodayYYMMDD()}"
-                  oninput="saveSlotData('${slotKey}', this.value)"
+                  oninput="onSlotInput('${slotKey}', this.value)"
                 >${escapeHtml(slotVal)}</textarea>
               `;
 
@@ -1179,7 +1207,6 @@
       link.remove();
     }
 
-    // 클라우드 모달
     function openCloudModal() {
       document.getElementById('cloudModal').style.display = 'flex';
       document.getElementById('cloudApiUrlInput').value = cloudApiUrl;
@@ -1196,12 +1223,9 @@
       closeCloudModal();
       if (url) {
         syncFromCloud(true);
-      } else {
-        updateCloudBarStatus(false);
       }
     }
 
-    // 복원 모달
     function openImportModal() {
       document.getElementById('importModal').style.display = 'flex';
       document.getElementById('importTextarea').value = '';
@@ -1234,45 +1258,33 @@
           localStorage.setItem(STORAGE_KEY, JSON.stringify(rackData));
           closeImportModal();
           renderRacks();
-          alert('복원되었습니다!');
-          if (cloudApiUrl) {
-            // 클라우드에도 배치 업로드
-            fetch(cloudApiUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-              body: JSON.stringify({ action: 'batch', data: rackData })
-            });
-          }
+          markChangesUnsaved();
+          alert('복원되었습니다! 우측 하단 [저장하기]를 눌러 구글 드라이브에도 반영하세요.');
         }
       } catch (err) {
         alert('JSON 파싱 오류: ' + err.message);
       }
     }
 
-    function confirmReset() {
-      if (confirm('⚠️ 모든 파렛트 렉 입력 데이터를 초기화하시겠습니까?')) {
-        rackData = {};
-        localStorage.removeItem(STORAGE_KEY);
-        renderRacks();
-        alert('초기화되었습니다.');
-      }
-    }
-
     window.addEventListener('DOMContentLoaded', () => {
       loadLocalData();
       renderRacks();
-      updateCloudBarStatus(false);
 
-      if (cloudApiUrl) {
+      // 앱 최초 실행 시에만 한 번 조용히 클라우드 최신 데이터를 가져옴 (작업 중엔 자동 리렌더링 절대 안 함!)
+      if (cloudApiUrl && Object.keys(rackData).length === 0) {
         syncFromCloud(false);
-        // 30초마다 자동 백그라운드 동기화
-        setInterval(() => {
-          syncFromCloud(false);
-        }, 30000);
       }
 
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').catch(() => {});
+      }
+    });
+
+    // 화면 벗어나거나 닫을 때 저장 안 된 내용 경고
+    window.addEventListener('beforeunload', (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
       }
     });
   </script>
