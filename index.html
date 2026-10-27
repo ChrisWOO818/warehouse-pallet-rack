@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1e293b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="창고 파렛트 렉 정보 관리 및 실시간 구글 드라이브 동기화 웹앱">
+  <link rel="manifest" href="manifest.json">
+  <title>창고 파렛트 렉 관리</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --primary-border: #bfdbfe;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --slot-empty: #f1f5f9;
+      --slot-filled: #ecfdf5;
+      --slot-filled-border: #10b981;
+      --highlight: #fef08a;
+      --highlight-border: #ca8a04;
+      --danger: #ef4444;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+      --radius: 10px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding-bottom: 60px;
+    }
+
+    /* 상단 안내 배너 (요구사항 10) */
+    .notice-banner {
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      color: #f8fafc;
+      padding: 14px 16px;
+      font-size: 13.5px;
+      border-bottom: 3px solid #3b82f6;
+      box-shadow: var(--shadow-md);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .notice-banner-title {
+      font-weight: 700;
+      color: #60a5fa;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+    .notice-banner-content {
+      color: #e2e8f0;
+      font-size: 13px;
+      line-height: 1.4;
+      word-break: keep-all;
+    }
+    .notice-banner-content strong {
+      color: #fef08a;
+      font-weight: 600;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 12px 14px;
+    }
+
+    /* 헤더 & 통계 */
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 6px;
+      margin-bottom: 14px;
+    }
+    .app-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .stats-badge {
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid #bae6fd;
+    }
+
+    /* 클라우드 동기화 바 */
+    .cloud-sync-bar {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 600;
+      color: #166534;
+    }
+    .cloud-sync-bar.disconnected {
+      background: #fffbeb;
+      border-color: #fde68a;
+      color: #92400e;
+    }
+    .cloud-btn {
+      background: #166534;
+      color: #ffffff;
+      border: none;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .cloud-sync-bar.disconnected .cloud-btn {
+      background: #d97706;
+    }
+
+    /* 액션 버튼 그룹 */
+    .header-actions {
+      display: flex;
+      gap: 6px;
+      width: 100%;
+      margin-bottom: 12px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .btn-sm {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+    .btn-sm:hover, .btn-sm:active {
+      background: #f1f5f9;
+      color: var(--text);
+      border-color: #cbd5e1;
+    }
+    .save-indicator {
+      margin-left: auto;
+      font-size: 11px;
+      color: #10b981;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .save-indicator.show {
+      opacity: 1;
+    }
+
+    /* 검색 섹션 (요구사항 9) */
+    .search-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+    }
+    .search-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .search-input {
+      width: 100%;
+      padding: 12px 38px 12px 14px;
+      border: 2px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+      background: #f8fafc;
+    }
+    .search-input:focus {
+      border-color: var(--primary);
+      background: #ffffff;
+    }
+    .search-clear-btn {
+      position: absolute;
+      right: 10px;
+      background: #cbd5e1;
+      border: none;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 12px;
+      color: #334155;
+    }
+    .search-results-panel {
+      margin-top: 10px;
+      display: none;
+      border-top: 1px solid var(--border);
+      padding-top: 10px;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+    .search-result-count {
+      font-size: 12px;
+      color: var(--primary);
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .search-result-item {
+      padding: 8px 10px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.15s;
+    }
+    .search-result-item:hover, .search-result-item:active {
+      background: #eff6ff;
+      border-color: var(--primary-border);
+    }
+    .search-result-loc {
+      font-weight: 700;
+      color: var(--primary);
+      margin-right: 8px;
+      white-space: nowrap;
+    }
+    .search-result-val {
+      color: var(--text);
+      word-break: break-all;
+      flex: 1;
+    }
+
+    /* 필터 제어부 (요구사항 5, 6, 7) */
+    .filter-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+    .filter-row {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .filter-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .filter-select {
+      width: 100%;
+      padding: 11px 12px;
+      font-size: 15px;
+      font-weight: 700;
+      border: 2px solid #cbd5e1;
+      border-radius: 8px;
+      background-color: #ffffff;
+      color: var(--text);
+      outline: none;
+      cursor: pointer;
+    }
+    .filter-select:focus {
+      border-color: var(--primary);
+    }
+
+    /* 동 퀵버튼 탭 */
+    .quick-tabs {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .tab-btn {
+      flex: 1;
+      min-width: 48px;
+      padding: 8px 6px;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #334155;
+      text-align: center;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .tab-btn.active {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+      box-shadow: 0 2px 4px rgba(37,99,235,0.25);
+    }
+
+    /* 동 섹션 및 열 카드 */
+    .dong-section {
+      margin-bottom: 24px;
+    }
+    .dong-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #1e293b;
+      margin-bottom: 12px;
+      padding-left: 6px;
+      border-left: 4px solid var(--primary);
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .dong-info-badge {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .row-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .row-card-header {
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border);
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .row-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #1e293b;
+    }
+    .row-occupancy {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .floors-container {
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .floor-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      background: #fafafa;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px dashed #cbd5e1;
+    }
+
+    @media (max-width: 580px) {
+      .floor-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+    }
+
+    .slot-box {
+      background: var(--slot-empty);
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 8px;
+      position: relative;
+      transition: all 0.2s;
+    }
+    .slot-box.filled {
+      background: var(--slot-filled);
+      border-color: var(--slot-filled-border);
+    }
+    .slot-box.highlight {
+      background: var(--highlight) !important;
+      border-color: var(--highlight-border) !important;
+      box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.4);
+      animation: pulse-border 1.5s infinite alternate;
+    }
+    @keyframes pulse-border {
+      from { transform: scale(1); }
+      to { transform: scale(1.02); }
+    }
+
+    .slot-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .slot-label {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #334155;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .slot-box.filled .slot-label {
+      color: #065f46;
+    }
+    .slot-actions {
+      display: flex;
+      gap: 4px;
+    }
+    .slot-tool-btn {
+      background: rgba(255,255,255,0.85);
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      padding: 2px 5px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #475569;
+      cursor: pointer;
+    }
+    .slot-tool-btn:hover {
+      background: #ffffff;
+      color: var(--primary);
+    }
+
+    .slot-input {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 7px 8px;
+      font-size: 13.5px;
+      line-height: 1.35;
+      color: #0f172a;
+      background: #ffffff;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .slot-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
+    }
+    .slot-input::placeholder {
+      color: #94a3b8;
+      font-size: 12px;
+    }
+
+    .floating-top-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #1e293b;
+      color: #ffffff;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-md);
+      cursor: pointer;
+      font-size: 18px;
+      z-index: 40;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 16px;
+    }
+    .modal-card {
+      background: #ffffff;
+      border-radius: var(--radius);
+      max-width: 520px;
+      width: 100%;
+      padding: 18px;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
+    }
+    .modal-title {
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      color: #0f172a;
+    }
+    .modal-body {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+    .modal-textarea {
+      width: 100%;
+      height: 90px;
+      font-family: monospace;
+      font-size: 11px;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-top: 8px;
+      resize: vertical;
+    }
+    .modal-input {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      margin-top: 6px;
+      outline: none;
+    }
+    .modal-input:focus {
+      border-color: var(--primary);
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .btn {
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-primary { background: var(--primary); color: #ffffff; }
+    .btn-secondary { background: #e2e8f0; color: #334155; }
+  </style>
+</head>
+<body>
+
+  <!-- 10. 상단 품목 기록 요령 안내 배너 -->
+  <div class="notice-banner">
+    <div class="container" style="padding: 0;">
+      <div class="notice-banner-title">
+        <span>📋</span> 품목 기록 요령
+      </div>
+      <div class="notice-banner-content">
+        사용 모델 명, 부품명, 입고일 순으로 기재 <br>
+        <strong>ex) APST-2031, 모터, 261027</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- 앱 헤더 및 통계 -->
+    <div class="app-header">
+      <div class="app-title">
+        <span>📦</span> 창고 파렛트 렉 관리
+      </div>
+      <div id="statsBadge" class="stats-badge">
+        계산 중...
+      </div>
+    </div>
+
+    <!-- 구글 드라이브(스프레드시트) 실시간 클라우드 동기화 상태 바 -->
+    <div id="cloudSyncBar" class="cloud-sync-bar disconnected">
+      <div id="cloudStatusText">☁️ 구글 드라이브 연동 필요 (기기 로컬 저장 모드)</div>
+      <button class="cloud-btn" onclick="openCloudModal()">연동 설정</button>
+    </div>
+
+    <!-- 유틸리티 메뉴 -->
+    <div class="header-actions">
+      <button class="btn-sm" onclick="syncFromCloud(true)">🔄 실시간 새로고침</button>
+      <button class="btn-sm" onclick="exportDataCSV()">📊 엑셀/CSV 다운</button>
+      <button class="btn-sm" onclick="exportDataJSON()">💾 백업(JSON)</button>
+      <button class="btn-sm" onclick="openImportModal()">📂 복원</button>
+      <button class="btn-sm" onclick="confirmReset()">🗑️ 초기화</button>
+      <span id="saveIndicator" class="save-indicator">✓ 즉시 저장됨</span>
+    </div>
+
+    <!-- 9. 제품 검색 기능 -->
+    <div class="search-card">
+      <div class="search-input-wrapper">
+        <input 
+          type="text" 
+          id="searchInput" 
+          class="search-input" 
+          placeholder="🔍 제품명, 모델명, 부품명, 날짜 검색..."
+          oninput="handleSearch(this.value)"
+        >
+        <button id="searchClearBtn" class="search-clear-btn" onclick="clearSearch()">✕</button>
+      </div>
+      <div id="searchResultsPanel" class="search-results-panel">
+        <div id="searchResultCount" class="search-result-count"></div>
+        <div id="searchResultsList"></div>
+      </div>
+    </div>
+
+    <!-- 5, 6, 7. 동 선택 드롭다운 및 탭 필터 -->
+    <div class="filter-card">
+      <div class="filter-row">
+        <div class="filter-label">
+          <span>구역 필터 (동 선택)</span>
+          <span id="currentViewDesc" style="font-weight: 500; font-size: 11.5px;">전체 (A동~G동)</span>
+        </div>
+        <select id="dongSelect" class="filter-select" onchange="handleDongSelect(this.value)">
+          <option value="ALL">전체 (A동 ~ G동 모두 보기)</option>
+          <option value="A">A동 (11열 · 3층)</option>
+          <option value="B">B동 (8열 · 4층)</option>
+          <option value="C">C동 (8열 · 4층)</option>
+          <option value="D">D동 (8열 · 4층)</option>
+          <option value="E">E동 (8열 · 4층)</option>
+          <option value="F">F동 (8열 · 3층)</option>
+          <option value="G">G동 (5열 · 4층)</option>
+        </select>
+
+        <div class="quick-tabs">
+          <button class="tab-btn active" data-dong="ALL" onclick="handleDongSelect('ALL')">전체</button>
+          <button class="tab-btn" data-dong="A" onclick="handleDongSelect('A')">A동</button>
+          <button class="tab-btn" data-dong="B" onclick="handleDongSelect('B')">B동</button>
+          <button class="tab-btn" data-dong="C" onclick="handleDongSelect('C')">C동</button>
+          <button class="tab-btn" data-dong="D" onclick="handleDongSelect('D')">D동</button>
+          <button class="tab-btn" data-dong="E" onclick="handleDongSelect('E')">E동</button>
+          <button class="tab-btn" data-dong="F" onclick="handleDongSelect('F')">F동</button>
+          <button class="tab-btn" data-dong="G" onclick="handleDongSelect('G')">G동</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6, 7, 8. 랙 입력 리스트 영역 -->
+    <div id="rackContainer"></div>
+  </div>
+
+  <button class="floating-top-btn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="맨 위로">↑</button>
+
+  <!-- 구글 드라이브(시트) 연동 설정 모달 -->
+  <div id="cloudModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-title">☁️ 구글 드라이브(스프레드시트) 실시간 연동</div>
+      <div class="modal-body">
+        본인 구글 드라이브의 스프레드시트에 작성된 <strong>Apps Script 웹 앱 URL</strong>을 아래에 등록하면, 
+        모든 사내 직원이 입력한 데이터가 실시간으로 구글 드라이브에 저장되고 동기화됩니다.
+        <input 
+          type="url" 
+          id="cloudApiUrlInput" 
+          class="modal-input" 
+          placeholder="https://script.google.com/macros/s/.../exec"
+        >
+        <div style="margin-top: 8px; font-size: 11.5px; color: #64748b;">
+          * 구글 스프레드시트 [확장 프로그램] → [Apps Script]에서 복사한 웹 앱 URL을 붙여넣으세요.
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeCloudModal()">닫기</button>
+        <button class="btn btn-primary" onclick="saveCloudUrl()">연동 및 즉시 동기화</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 데이터 복원 모달 -->
+  <div id="importModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-title">📂 백업 데이터 복원</div>
+      <div class="modal-body">
+        이전에 백업(JSON)한 텍스트를 아래에 붙여넣거나 백업 파일을 선택하세요.
+        <textarea id="importTextarea" class="modal-textarea" placeholder='{"A-01-1-L": "..."}'></textarea>
+        <input type="file" id="importFileInput" accept=".json" style="margin-top: 10px;" onchange="handleFileSelect(event)">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeImportModal()">취소</button>
+        <button class="btn btn-primary" onclick="applyImport()">복원하기</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const WAREHOUSE_CONFIG = {
+      'A': { name: 'A동', rows: 11, floors: 3 },
+      'B': { name: 'B동', rows: 8,  floors: 4 },
+      'C': { name: 'C동', rows: 8,  floors: 4 },
+      'D': { name: 'D동', rows: 8,  floors: 4 },
+      'E': { name: 'E동', rows: 8,  floors: 4 },
+      'F': { name: 'F동', rows: 8,  floors: 3 },
+      'G': { name: 'G동', rows: 5,  floors: 4 },
+    };
+
+    const STORAGE_KEY = 'warehouse_rack_data_v1';
+    const CLOUD_URL_KEY = 'warehouse_cloud_api_url_v1';
+    const DEFAULT_CLOUD_API_URL = 'https://script.google.com/macros/s/AKfycbwyAnehnaRzB2TWfxvli7g29wdPgs__s5Ws39wHOgAld3yeMxjtiqLc1NhStqUdCFez/exec';
+
+    let rackData = {};
+    let currentFilter = 'ALL';
+    let saveTimeout = null;
+    let cloudSyncDebounce = null;
+    let cloudApiUrl = localStorage.getItem(CLOUD_URL_KEY) || DEFAULT_CLOUD_API_URL;
+
+    function getTodayYYMMDD() {
+      const now = new Date();
+      const yy = String(now.getFullYear()).slice(-2);
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      return `${yy}${mm}${dd}`;
+    }
+
+    function loadLocalData() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        rackData = saved ? JSON.parse(saved) : {};
+      } catch (e) {
+        rackData = {};
+      }
+    }
+
+    // 8. 로컬 즉시 저장 + 구글 드라이브 클라우드 백그라운드 전송
+    function saveSlotData(slotKey, value) {
+      const trimmed = value.trim();
+      if (trimmed === '') {
+        delete rackData[slotKey];
+      } else {
+        rackData[slotKey] = trimmed;
+      }
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(rackData));
+
+      const slotElement = document.getElementById(`slot-box-${slotKey}`);
+      if (slotElement) {
+        if (trimmed !== '') {
+          slotElement.classList.add('filled');
+        } else {
+          slotElement.classList.remove('filled');
+        }
+      }
+
+      updateRowOccupancy(slotKey);
+      updateTotalStats();
+      showSaveIndicator('✓ 로컬 저장됨');
+
+      // 구글 드라이브 연동 URL이 설정되어 있다면 클라우드 즉시 전송
+      if (cloudApiUrl) {
+        clearTimeout(cloudSyncDebounce);
+        cloudSyncDebounce = setTimeout(() => {
+          sendSlotToCloud(slotKey, trimmed);
+        }, 600);
+      }
+    }
+
+    // 클라우드로 단일 슬롯 전송
+    function sendSlotToCloud(slotKey, value) {
+      if (!cloudApiUrl) return;
+      showSaveIndicator('☁️ 구글 드라이브 저장 중...');
+
+      fetch(cloudApiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'single',
+          slotKey: slotKey,
+          value: value
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          showSaveIndicator('☁️ 구글 드라이브 실시간 저장됨!');
+        }
+      })
+      .catch(err => {
+        console.warn('클라우드 동기화 지연:', err);
+        showSaveIndicator('⚠️ 오프라인 저장됨 (재접속 시 반영)');
+      });
+    }
+
+    // 클라우드에서 전체 최신 데이터 가져오기
+    function syncFromCloud(showNotice) {
+      if (!cloudApiUrl) {
+        if (showNotice) openCloudModal();
+        return;
+      }
+
+      if (showNotice) showSaveIndicator('☁️ 구글 드라이브 최신화 중...');
+
+      fetch(cloudApiUrl)
+        .then(res => res.json())
+        .then(res => {
+          if (res.status === 'success' && res.data) {
+            // 로컬 데이터와 클라우드 데이터 병합
+            rackData = { ...rackData, ...res.data };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(rackData));
+            renderRacks();
+            updateCloudBarStatus(true);
+            if (showNotice) alert('구글 드라이브 최신 데이터와 동기화되었습니다!');
+          }
+        })
+        .catch(err => {
+          console.error('클라우드 동기화 실패:', err);
+          updateCloudBarStatus(false);
+        });
+    }
+
+    function updateCloudBarStatus(isConnected) {
+      const bar = document.getElementById('cloudSyncBar');
+      const text = document.getElementById('cloudStatusText');
+      if (!cloudApiUrl) {
+        bar.className = 'cloud-sync-bar disconnected';
+        text.textContent = '☁️ 구글 드라이브 연동 필요 (기기 로컬 저장 모드)';
+      } else if (isConnected) {
+        bar.className = 'cloud-sync-bar';
+        text.textContent = '🟢 구글 드라이브 실시간 동기화 작동 중';
+      } else {
+        bar.className = 'cloud-sync-bar disconnected';
+        text.textContent = '⚠️ 구글 드라이브 연결 확인 중...';
+      }
+    }
+
+    function showSaveIndicator(msg) {
+      const el = document.getElementById('saveIndicator');
+      if (!el) return;
+      el.textContent = msg || '✓ 즉시 자동 저장됨';
+      el.classList.add('show');
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(() => {
+        el.classList.remove('show');
+      }, 2000);
+    }
+
+    function appendTodayDate(slotKey) {
+      const input = document.getElementById(`input-${slotKey}`);
+      if (!input) return;
+      const today = getTodayYYMMDD();
+      let current = input.value.trim();
+      if (current === '') {
+        input.value = today;
+      } else if (!current.includes(today)) {
+        input.value = current + ', ' + today;
+      }
+      saveSlotData(slotKey, input.value);
+    }
+
+    function clearSlot(slotKey) {
+      const input = document.getElementById(`input-${slotKey}`);
+      if (!input) return;
+      if (input.value.trim() === '') return;
+      input.value = '';
+      saveSlotData(slotKey, '');
+    }
+
+    function updateTotalStats() {
+      let totalSlots = 0;
+      Object.keys(WAREHOUSE_CONFIG).forEach(dong => {
+        const cfg = WAREHOUSE_CONFIG[dong];
+        totalSlots += cfg.rows * cfg.floors * 2;
+      });
+
+      const filledSlots = Object.keys(rackData).filter(k => (rackData[k] || '').trim() !== '').length;
+      const percent = totalSlots > 0 ? ((filledSlots / totalSlots) * 100).toFixed(1) : 0;
+
+      const badge = document.getElementById('statsBadge');
+      if (badge) {
+        badge.textContent = `적재: ${filledSlots}/${totalSlots}칸 (${percent}%)`;
+      }
+    }
+
+    function updateRowOccupancy(slotKey) {
+      const parts = slotKey.split('-');
+      if (parts.length >= 2) {
+        const dong = parts[0];
+        const rowNum = parts[1];
+        const rowId = `${dong}-${rowNum}`;
+        const rowEl = document.getElementById(`row-occupancy-${rowId}`);
+        if (rowEl) {
+          const cfg = WAREHOUSE_CONFIG[dong];
+          const totalInRow = cfg.floors * 2;
+          let filledInRow = 0;
+          for (let f = 1; f <= cfg.floors; f++) {
+            if ((rackData[`${dong}-${rowNum}-${f}-L`] || '').trim() !== '') filledInRow++;
+            if ((rackData[`${dong}-${rowNum}-${f}-R`] || '').trim() !== '') filledInRow++;
+          }
+          rowEl.textContent = `${filledInRow}/${totalInRow} 적재`;
+        }
+      }
+    }
+
+    function renderRacks() {
+      const container = document.getElementById('rackContainer');
+      container.innerHTML = '';
+
+      const targetDongs = (currentFilter === 'ALL') 
+        ? Object.keys(WAREHOUSE_CONFIG) 
+        : [currentFilter];
+
+      targetDongs.forEach(dong => {
+        const cfg = WAREHOUSE_CONFIG[dong];
+        const dongSection = document.createElement('div');
+        dongSection.className = 'dong-section';
+        dongSection.id = `dong-section-${dong}`;
+
+        const dongTitle = document.createElement('div');
+        dongTitle.className = 'dong-title';
+        dongTitle.innerHTML = `
+          <span>${cfg.name}</span>
+          <span class="dong-info-badge">총 ${cfg.rows}열 · ${cfg.floors}층 (열당 ${cfg.floors * 2}칸)</span>
+        `;
+        dongSection.appendChild(dongTitle);
+
+        for (let r = 1; r <= cfg.rows; r++) {
+          const rowFormatted = String(r).padStart(2, '0');
+          const rowKey = `${dong}-${rowFormatted}`;
+
+          const rowCard = document.createElement('div');
+          rowCard.className = 'row-card';
+          rowCard.id = `row-card-${rowKey}`;
+
+          const totalInRow = cfg.floors * 2;
+          let filledInRow = 0;
+          for (let f = 1; f <= cfg.floors; f++) {
+            if ((rackData[`${rowKey}-${f}-L`] || '').trim() !== '') filledInRow++;
+            if ((rackData[`${rowKey}-${f}-R`] || '').trim() !== '') filledInRow++;
+          }
+
+          const rowHeader = document.createElement('div');
+          rowHeader.className = 'row-card-header';
+          rowHeader.innerHTML = `
+            <div class="row-title">📍 ${rowKey}열</div>
+            <div id="row-occupancy-${rowKey}" class="row-occupancy">${filledInRow}/${totalInRow} 적재</div>
+          `;
+          rowCard.appendChild(rowHeader);
+
+          const floorsContainer = document.createElement('div');
+          floorsContainer.className = 'floors-container';
+
+          for (let f = cfg.floors; f >= 1; f--) {
+            const floorRow = document.createElement('div');
+            floorRow.className = 'floor-row';
+
+            ['L', 'R'].forEach(side => {
+              const sideText = side === 'L' ? '좌' : '우';
+              const slotKey = `${rowKey}-${f}-${side}`;
+              const slotVal = rackData[slotKey] || '';
+              const isFilled = slotVal.trim() !== '';
+
+              const slotBox = document.createElement('div');
+              slotBox.className = `slot-box ${isFilled ? 'filled' : ''}`;
+              slotBox.id = `slot-box-${slotKey}`;
+
+              slotBox.innerHTML = `
+                <div class="slot-header">
+                  <span class="slot-label">
+                    <span>${f}층 ${sideText}</span>
+                    <span style="font-size:11px; color:#64748b; font-weight:normal;">(${slotKey})</span>
+                  </span>
+                  <div class="slot-actions">
+                    <button type="button" class="slot-tool-btn" onclick="appendTodayDate('${slotKey}')" title="오늘 날짜 추가">+날짜</button>
+                    <button type="button" class="slot-tool-btn" onclick="clearSlot('${slotKey}')" title="비우기">✕</button>
+                  </div>
+                </div>
+                <textarea 
+                  id="input-${slotKey}" 
+                  class="slot-input" 
+                  rows="2" 
+                  placeholder="예: APST-2031, 모터, ${getTodayYYMMDD()}"
+                  oninput="saveSlotData('${slotKey}', this.value)"
+                >${escapeHtml(slotVal)}</textarea>
+              `;
+
+              floorRow.appendChild(slotBox);
+            });
+
+            floorsContainer.appendChild(floorRow);
+          }
+
+          rowCard.appendChild(floorsContainer);
+          dongSection.appendChild(rowCard);
+        }
+
+        container.appendChild(dongSection);
+      });
+
+      updateTotalStats();
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function handleDongSelect(dong) {
+      currentFilter = dong;
+      document.getElementById('dongSelect').value = dong;
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        if (btn.getAttribute('data-dong') === dong) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      const descEl = document.getElementById('currentViewDesc');
+      if (dong === 'ALL') {
+        descEl.textContent = '전체 (A동~G동)';
+      } else {
+        const cfg = WAREHOUSE_CONFIG[dong];
+        descEl.textContent = `${cfg.name} (총 ${cfg.rows}열)`;
+      }
+
+      renderRacks();
+    }
+
+    function handleSearch(query) {
+      const q = query.trim().toLowerCase();
+      const clearBtn = document.getElementById('searchClearBtn');
+      const panel = document.getElementById('searchResultsPanel');
+      const list = document.getElementById('searchResultsList');
+      const countEl = document.getElementById('searchResultCount');
+
+      document.querySelectorAll('.slot-box.highlight').forEach(el => {
+        el.classList.remove('highlight');
+      });
+
+      if (!q) {
+        clearBtn.style.display = 'none';
+        panel.style.display = 'none';
+        return;
+      }
+
+      clearBtn.style.display = 'flex';
+      panel.style.display = 'block';
+
+      const matches = [];
+      Object.keys(rackData).forEach(slotKey => {
+        const val = rackData[slotKey] || '';
+        if (val.toLowerCase().includes(q) || slotKey.toLowerCase().includes(q)) {
+          matches.push({ slotKey, value: val });
+        }
+      });
+
+      countEl.textContent = `검색 결과: ${matches.length}건 발견`;
+      list.innerHTML = '';
+
+      if (matches.length === 0) {
+        list.innerHTML = `<div style="font-size:12px; color:#94a3b8; padding:6px 0;">일치하는 품목이 없습니다.</div>`;
+        return;
+      }
+
+      matches.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'search-result-item';
+        const parts = item.slotKey.split('-');
+        const readableLoc = `${parts[0]}동 ${parts[1]}열 ${parts[2]}층 ${parts[3] === 'L' ? '좌' : '우'}`;
+
+        div.innerHTML = `
+          <span class="search-result-loc">${readableLoc}</span>
+          <span class="search-result-val">${escapeHtml(item.value)}</span>
+        `;
+        div.onclick = () => scrollToSlot(item.slotKey);
+        list.appendChild(div);
+      });
+    }
+
+    function clearSearch() {
+      const input = document.getElementById('searchInput');
+      input.value = '';
+      handleSearch('');
+    }
+
+    function scrollToSlot(slotKey) {
+      const parts = slotKey.split('-');
+      const targetDong = parts[0];
+
+      if (currentFilter !== 'ALL' && currentFilter !== targetDong) {
+        handleDongSelect(targetDong);
+      }
+
+      setTimeout(() => {
+        const slotEl = document.getElementById(`slot-box-${slotKey}`);
+        if (slotEl) {
+          slotEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          slotEl.classList.add('highlight');
+          const input = document.getElementById(`input-${slotKey}`);
+          if (input) {
+            setTimeout(() => input.focus(), 400);
+          }
+          setTimeout(() => {
+            slotEl.classList.remove('highlight');
+          }, 4000);
+        }
+      }, 100);
+    }
+
+    function exportDataJSON() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(rackData, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `창고파렛트렉_백업_${getTodayYYMMDD()}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function exportDataCSV() {
+      let csvContent = "\uFEFF동,열,층,위치,고유코드,기재정보\n";
+      Object.keys(WAREHOUSE_CONFIG).forEach(dong => {
+        const cfg = WAREHOUSE_CONFIG[dong];
+        for (let r = 1; r <= cfg.rows; r++) {
+          const rowFormatted = String(r).padStart(2, '0');
+          for (let f = 1; f <= cfg.floors; f++) {
+            ['L', 'R'].forEach(side => {
+              const sideKor = side === 'L' ? '좌' : '우';
+              const key = `${dong}-${rowFormatted}-${f}-${side}`;
+              const val = (rackData[key] || '').replace(/"/g, '""');
+              csvContent += `"${dong}동","${rowFormatted}열","${f}층","${sideKor}","${key}","${val}"\n`;
+            });
+          }
+        }
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `창고파렛트렉_현황_${getTodayYYMMDD()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    }
+
+    // 클라우드 모달
+    function openCloudModal() {
+      document.getElementById('cloudModal').style.display = 'flex';
+      document.getElementById('cloudApiUrlInput').value = cloudApiUrl;
+    }
+
+    function closeCloudModal() {
+      document.getElementById('cloudModal').style.display = 'none';
+    }
+
+    function saveCloudUrl() {
+      const url = document.getElementById('cloudApiUrlInput').value.trim();
+      cloudApiUrl = url;
+      localStorage.setItem(CLOUD_URL_KEY, url);
+      closeCloudModal();
+      if (url) {
+        syncFromCloud(true);
+      } else {
+        updateCloudBarStatus(false);
+      }
+    }
+
+    // 복원 모달
+    function openImportModal() {
+      document.getElementById('importModal').style.display = 'flex';
+      document.getElementById('importTextarea').value = '';
+    }
+
+    function closeImportModal() {
+      document.getElementById('importModal').style.display = 'none';
+    }
+
+    function handleFileSelect(evt) {
+      const file = evt.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('importTextarea').value = e.target.result;
+      };
+      reader.readAsText(file);
+    }
+
+    function applyImport() {
+      const text = document.getElementById('importTextarea').value.trim();
+      if (!text) {
+        alert('복원할 JSON 텍스트를 입력해주세요.');
+        return;
+      }
+      try {
+        const parsed = JSON.parse(text);
+        if (confirm('기존 데이터를 덮어씌워 복원하시겠습니까?')) {
+          rackData = parsed;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(rackData));
+          closeImportModal();
+          renderRacks();
+          alert('복원되었습니다!');
+          if (cloudApiUrl) {
+            // 클라우드에도 배치 업로드
+            fetch(cloudApiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify({ action: 'batch', data: rackData })
+            });
+          }
+        }
+      } catch (err) {
+        alert('JSON 파싱 오류: ' + err.message);
+      }
+    }
+
+    function confirmReset() {
+      if (confirm('⚠️ 모든 파렛트 렉 입력 데이터를 초기화하시겠습니까?')) {
+        rackData = {};
+        localStorage.removeItem(STORAGE_KEY);
+        renderRacks();
+        alert('초기화되었습니다.');
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadLocalData();
+      renderRacks();
+      updateCloudBarStatus(false);
+
+      if (cloudApiUrl) {
+        syncFromCloud(false);
+        // 30초마다 자동 백그라운드 동기화
+        setInterval(() => {
+          syncFromCloud(false);
+        }, 30000);
+      }
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      }
+    });
+  </script>
+</body>
+</html>
